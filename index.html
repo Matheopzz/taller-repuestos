@@ -167,10 +167,77 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
   .form-row,.form-row3{grid-template-columns:1fr}
   .mode-selector{flex-direction:column}
 }
+
+/* ── LOGIN ───────────────────────────────────────────────────── */
+.login-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.login-screen::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);
+  background-size: 40px 40px; pointer-events: none;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  width: 100%; max-width: 380px;
+  position: relative; z-index: 1;
+  animation: slideUp .25s ease;
+}
+.login-logo {
+  width: 48px; height: 48px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+.login-logo svg { width: 22px; height: 22px; stroke: var(--accent2); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.login-title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 4px; }
+.login-sub { font-size: 13px; color: var(--text3); text-align: center; margin-bottom: 1.75rem; }
+.login-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.login-group label { font-size: 12px; color: var(--text3); }
+.login-group input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 14px; padding: 0 14px; height: 42px; outline: none; transition: border-color .15s; width: 100%; }
+.login-group input:focus { border-color: var(--accent); }
+.login-btn { width: 100%; height: 42px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: background .15s; }
+.login-btn:hover { background: #2563eb; }
+.login-err { font-size: 12px; color: var(--falt-text); background: var(--falt-bg); border: 1px solid var(--falt-border); border-radius: 8px; padding: 8px 12px; margin-top: 10px; display: none; text-align: center; }
+.user-badge { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 12px 5px 8px; font-size: 12px; color: var(--text2); }
+.user-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--inst-text); }
+.btn-logout { height: 34px; padding: 0 14px; border: 1px solid var(--border2); border-radius: var(--radius); background: transparent; color: var(--text3); font-family: 'DM Sans',sans-serif; font-size: 12px; cursor: pointer; transition: all .15s; }
+.btn-logout:hover { color: var(--falt-text); border-color: var(--falt-border); }
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div class="login-title">Control de repuestos</div>
+    <div class="login-sub">Taller de chapa y pintura</div>
+    <div class="login-group">
+      <label>Usuario</label>
+      <input type="text" id="l-user" placeholder="Ingresá tu usuario" autocomplete="username">
+    </div>
+    <div class="login-group">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="Ingresá tu contraseña" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="login-err">Usuario o contraseña incorrectos.</div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
 
   <div class="header">
     <div class="header-left">
@@ -181,6 +248,13 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
         <div class="header-sub">Taller de chapa y pintura &nbsp;<span id="conn-status" style="font-size:11px;color:var(--text3)">● Conectando...</span></div>
         <div class="header-title">Control de repuestos</div>
       </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="user-badge" id="user-badge">
+        <span class="user-badge-dot"></span>
+        <span id="user-badge-name">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
     </div>
     <div class="header-btns">
       <button class="btn-secondary" onclick="abrirModal('tanda')">
@@ -263,6 +337,7 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
       <p>No hay repuestos registrados todavía.</p>
     </div>
   </div>
+</div>
 </div>
 
 <!-- MODAL -->
@@ -414,6 +489,75 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
 </div>
 
 <script type="module">
+
+// ── USUARIOS ──────────────────────────────────────────────────
+const USUARIOS = {
+  'MattheoPzz': { pass: 'AutosPaint2025@', rol: 'admin',  nombre: 'Administrador' },
+  'LeopoldoBlz': { pass: 'AP2026@',         rol: 'viewer', nombre: 'Visualizador'  },
+};
+
+let rolActual = null;
+
+function doLogin() {
+  const user = document.getElementById('l-user').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const err  = document.getElementById('login-err');
+  const u = USUARIOS[user];
+  if (!u || u.pass !== pass) {
+    err.style.display = 'block';
+    document.getElementById('l-pass').value = '';
+    return;
+  }
+  err.style.display = 'none';
+  rolActual = u.rol;
+  sessionStorage.setItem('taller_user', JSON.stringify({ user, rol: u.rol, nombre: u.nombre }));
+  mostrarApp(u);
+}
+window.doLogin = doLogin;
+
+// Permitir Enter en los campos
+document.addEventListener('DOMContentLoaded', function() {
+  ['l-user','l-pass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+  });
+});
+
+function mostrarApp(u) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = '';
+  document.getElementById('user-badge-name').textContent = u.nombre;
+  // Si es viewer, ocultar botones de acción
+  if (u.rol === 'viewer') {
+    document.querySelectorAll('.btn-primary, .btn-secondary, .act-btn, .btn-estado').forEach(el => {
+      el.style.display = 'none';
+    });
+    // Ocultar header-btns completo para viewer
+    const hb = document.querySelector('.header-btns');
+    if (hb) hb.style.display = 'none';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('taller_user');
+  location.reload();
+}
+window.doLogout = doLogout;
+
+// Verificar sesión activa
+(function checkSession() {
+  try {
+    const saved = sessionStorage.getItem('taller_user');
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (USUARIOS[u.user] && USUARIOS[u.user].rol === u.rol) {
+        rolActual = u.rol;
+        mostrarApp({ ...USUARIOS[u.user], user: u.user });
+      }
+    }
+  } catch(e) {}
+})();
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, onSnapshot, addDoc, setDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -544,10 +688,10 @@ function render() {
       <td><span class="badge ${r.usado?'b-usado':'b-nuevo'}">${r.usado?'Usado':'Nuevo'}</span></td>
       <td>${btnEst(r)}</td>
       <td>${fmt(r.fecha)}</td>
-      <td><div class="act-btns">
+      <td>${rolActual === 'viewer' ? '' : `<div class="act-btns">
         <button class="act-btn" title="Editar" onclick="window._editar('${r.id}')">✎</button>
         <button class="act-btn del" title="Eliminar" onclick="window._eliminar('${r.id}')">✕</button>
-      </div></td>
+      </div>`}</td>
     </tr>`;
   }).join('');
 }

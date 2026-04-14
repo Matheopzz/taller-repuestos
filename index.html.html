@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Repuestos — Taller</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117; --surface:#181c27; --surface2:#1e2333;
+  --border:#2a3045; --border2:#35405a;
+  --accent:#3b82f6; --accent2:#60a5fa; --accent-glow:rgba(59,130,246,0.15);
+  --text:#e8ecf4; --text2:#8892a4; --text3:#4d5a70;
+  --pend-bg:rgba(245,158,11,0.12); --pend-text:#fbbf24; --pend-border:rgba(245,158,11,0.3);
+  --inst-bg:rgba(16,185,129,0.12); --inst-text:#34d399; --inst-border:rgba(16,185,129,0.3);
+  --falt-bg:rgba(239,68,68,0.12); --falt-text:#f87171; --falt-border:rgba(239,68,68,0.3);
+  --orig-bg:rgba(139,92,246,0.12); --orig-text:#a78bfa; --orig-border:rgba(139,92,246,0.3);
+  --rec-bg:rgba(59,130,246,0.12); --rec-text:#60a5fa; --rec-border:rgba(59,130,246,0.3);
+  --seg-bg:rgba(236,72,153,0.12); --seg-text:#f472b6; --seg-border:rgba(236,72,153,0.3);
+  --pat-bg:rgba(245,158,11,0.1); --pat-text:#fcd34d; --pat-border:rgba(245,158,11,0.25);
+  --radius:10px; --radius-lg:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0 1.5rem 3rem}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:1.75rem 0 1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:1rem}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-icon{width:42px;height:42px;background:var(--accent-glow);border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
+.header-icon svg{width:20px;height:20px;stroke:var(--accent2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.header-title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+.header-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.header-btns{display:flex;gap:10px;flex-wrap:wrap}
+
+.btn-primary{display:flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:0 18px;height:38px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s}
+.btn-primary:hover{background:#2563eb}
+.btn-primary:active{transform:scale(0.97)}
+.btn-primary svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-secondary{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);padding:0 18px;height:38px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{background:var(--surface2);color:var(--text)}
+.btn-secondary svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:1.5rem 0}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;transition:border-color .2s}
+.stat-card:hover{border-color:var(--border2)}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:600;letter-spacing:-0.5px;line-height:1}
+.s-total .stat-val{color:var(--text)}
+.s-pend .stat-val{color:var(--pend-text)}
+.s-inst .stat-val{color:var(--inst-text)}
+.s-rep .stat-val{color:var(--rec-text)}
+.stat-bar{height:2px;border-radius:2px;margin-top:10px;background:var(--border)}
+.stat-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.s-total .stat-fill{background:var(--text3)}
+.s-pend .stat-fill{background:var(--pend-text)}
+.s-inst .stat-fill{background:var(--inst-text)}
+.s-rep .stat-fill{background:var(--rec-text)}
+
+.toolbar{display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
+.search-wrap{flex:1;min-width:200px;position:relative}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:0 12px;height:38px;outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+input[type=date]{color-scheme:dark}
+.search-wrap input{padding-left:36px}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234d5a70' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+
+.table-container{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:1100px}
+thead tr{border-bottom:1px solid var(--border);background:rgba(255,255,255,0.015)}
+th{padding:11px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,0.025)}
+td{padding:10px 12px;font-size:13px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+td.primary{color:var(--text);font-weight:500}
+td.mono{font-family:'DM Mono',monospace;font-size:12px}
+
+/* Patente y compañía resaltadas */
+.cell-pat{display:inline-flex;align-items:center;background:var(--pat-bg);color:var(--pat-text);border:1px solid var(--pat-border);border-radius:6px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.05em}
+.cell-seg{display:inline-flex;align-items:center;background:var(--seg-bg);color:var(--seg-text);border:1px solid var(--seg-border);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:500;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.tanda-tag{display:inline-flex;align-items:center;font-size:10px;color:var(--rec-text);background:var(--rec-bg);border:1px solid var(--rec-border);border-radius:4px;padding:1px 5px;margin-left:5px}
+
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid;white-space:nowrap}
+.b-orig{background:var(--orig-bg);color:var(--orig-text);border-color:var(--orig-border)}
+.b-oem{background:var(--rec-bg);color:var(--rec-text);border-color:var(--rec-border)}
+.b-after{background:var(--inst-bg);color:var(--inst-text);border-color:var(--inst-border)}
+.b-gen{background:rgba(100,100,120,0.15);color:#9ca3af;border-color:rgba(100,100,120,0.3)}
+.b-usado{background:var(--falt-bg);color:var(--falt-text);border-color:var(--falt-border)}
+.b-nuevo{background:var(--inst-bg);color:var(--inst-text);border-color:var(--inst-border)}
+
+.btn-estado{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-estado.sin{background:var(--pend-bg);color:var(--pend-text);border-color:var(--pend-border)}
+.btn-estado.sin:hover{background:rgba(245,158,11,0.22)}
+.btn-estado.inst{background:var(--inst-bg);color:var(--inst-text);border-color:var(--inst-border)}
+.btn-estado.inst:hover{background:rgba(16,185,129,0.22)}
+.btn-estado-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+.act-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;font-size:13px}
+.act-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface2)}
+.act-btn.del:hover{border-color:var(--falt-border);color:var(--falt-text);background:var(--falt-bg)}
+.act-btns{display:flex;gap:5px}
+
+.empty{padding:4rem 2rem;text-align:center;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:1.75rem;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.25rem;gap:12px}
+.modal-title{font-size:16px;font-weight:600}
+.modal-subtitle{font-size:12px;color:var(--text3);margin-top:3px}
+.modal-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .15s;flex-shrink:0}
+.modal-close:hover{border-color:var(--border2);color:var(--text)}
+
+.mode-selector{display:flex;gap:8px;margin-bottom:1.25rem}
+.mode-btn{flex:1;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;text-align:left}
+.mode-btn:hover{border-color:var(--border2);color:var(--text)}
+.mode-btn.active{border-color:var(--accent);color:var(--accent2);background:var(--accent-glow)}
+.mode-btn strong{display:block;font-weight:600;font-size:13px;margin-bottom:2px}
+.mode-btn span{font-size:11px;opacity:.75}
+
+.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px;margin-top:18px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.form-group label{font-size:12px;color:var(--text3)}
+textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
+
+/* TANDA - auto-grow */
+.tanda-header{display:grid;grid-template-columns:22px 1fr 110px 78px 78px 78px 26px;gap:6px;padding:0 10px 6px;font-size:11px;color:var(--text3);align-items:center}
+.tanda-list{display:flex;flex-direction:column;gap:6px}
+.tanda-item{display:grid;grid-template-columns:22px 1fr 110px 78px 78px 78px 26px;gap:6px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;transition:border-color .15s}
+.tanda-item:focus-within{border-color:var(--border2)}
+.tanda-num{font-size:11px;color:var(--text3);text-align:center;user-select:none}
+.tanda-item input,.tanda-item select{height:30px;font-size:12px;padding:0 7px}
+.tanda-remove{width:22px;height:22px;border-radius:5px;border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0}
+.tanda-remove:hover{color:var(--falt-text)}
+
+.toggle-group{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--radius)}
+.toggle-group label{font-size:13px;color:var(--text2);cursor:pointer;flex:1}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--border2);border-radius:20px;cursor:pointer;transition:background .2s}
+.toggle-track::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s}
+.toggle input:checked+.toggle-track{background:var(--accent)}
+.toggle input:checked+.toggle-track::before{transform:translateX(16px)}
+
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn-cancel{height:38px;padding:0 16px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{border-color:var(--border2);color:var(--text)}
+.btn-save{height:38px;padding:0 20px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-save:hover{background:#2563eb}
+.form-err{font-size:12px;color:var(--falt-text);background:var(--falt-bg);border:1px solid var(--falt-border);border-radius:8px;padding:8px 12px;margin-top:6px;display:none}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media(max-width:640px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .form-row,.form-row3{grid-template-columns:1fr}
+  .mode-selector{flex-direction:column}
+}
+
+/* ── LOGIN ───────────────────────────────────────────────────── */
+.login-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.login-screen::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);
+  background-size: 40px 40px; pointer-events: none;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2rem;
+  width: 100%; max-width: 380px;
+  position: relative; z-index: 1;
+  animation: slideUp .25s ease;
+}
+.login-logo {
+  width: 48px; height: 48px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+.login-logo svg { width: 22px; height: 22px; stroke: var(--accent2); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.login-title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 4px; }
+.login-sub { font-size: 13px; color: var(--text3); text-align: center; margin-bottom: 1.75rem; }
+.login-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.login-group label { font-size: 12px; color: var(--text3); }
+.login-group input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans',sans-serif; font-size: 14px; padding: 0 14px; height: 42px; outline: none; transition: border-color .15s; width: 100%; }
+.login-group input:focus { border-color: var(--accent); }
+.login-btn { width: 100%; height: 42px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: background .15s; }
+.login-btn:hover { background: #2563eb; }
+.login-err { font-size: 12px; color: var(--falt-text); background: var(--falt-bg); border: 1px solid var(--falt-border); border-radius: 8px; padding: 8px 12px; margin-top: 10px; display: none; text-align: center; }
+.user-badge { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 12px 5px 8px; font-size: 12px; color: var(--text2); }
+.user-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--inst-text); }
+.btn-logout { height: 34px; padding: 0 14px; border: 1px solid var(--border2); border-radius: var(--radius); background: transparent; color: var(--text3); font-family: 'DM Sans',sans-serif; font-size: 12px; cursor: pointer; transition: all .15s; }
+.btn-logout:hover { color: var(--falt-text); border-color: var(--falt-border); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div class="login-title">Control de repuestos</div>
+    <div class="login-sub">Taller de chapa y pintura</div>
+    <div class="login-group">
+      <label>Usuario</label>
+      <input type="text" id="l-user" placeholder="Ingresá tu usuario" autocomplete="username">
+    </div>
+    <div class="login-group">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="Ingresá tu contraseña" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="login-err">Usuario o contraseña incorrectos.</div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div>
+        <div class="header-sub">Taller de chapa y pintura &nbsp;<span id="conn-status" style="font-size:11px;color:var(--text3)">● Conectando...</span></div>
+        <div class="header-title">Control de repuestos</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="user-badge" id="user-badge">
+        <span class="user-badge-dot"></span>
+        <span id="user-badge-name">—</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+    <div class="header-btns">
+      <button class="btn-secondary" onclick="abrirModal('tanda')">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        Cargar tanda
+      </button>
+      <button class="btn-primary" onclick="abrirModal('individual')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nuevo repuesto
+      </button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card s-total">
+      <div class="stat-label">Total repuestos</div>
+      <div class="stat-val" id="s-total">0</div>
+      <div class="stat-bar"><div class="stat-fill" id="bar-total" style="width:100%"></div></div>
+    </div>
+    <div class="stat-card s-pend">
+      <div class="stat-label">Sin instalar</div>
+      <div class="stat-val" id="s-pend">0</div>
+      <div class="stat-bar"><div class="stat-fill" id="bar-pend" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card s-inst">
+      <div class="stat-label">Instalados</div>
+      <div class="stat-val" id="s-inst">0</div>
+      <div class="stat-bar"><div class="stat-fill" id="bar-inst" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card s-rep">
+      <div class="stat-label">Repuesteros activos</div>
+      <div class="stat-val" id="s-repuesteros">0</div>
+      <div class="stat-bar"><div class="stat-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="buscar" placeholder="Buscar siniestro, patente, repuesto, repuestero..." oninput="render()">
+    </div>
+    <select id="f-estado" onchange="render()" style="width:155px">
+      <option value="">Todos los estados</option>
+      <option value="Sin instalar">Sin instalar</option>
+      <option value="Instalado">Instalado</option>
+    </select>
+    <select id="f-seguro" onchange="render()" style="width:175px">
+      <option value="">Todas las compañías</option>
+    </select>
+    <select id="f-repuestero" onchange="render()" style="width:170px">
+      <option value="">Todos los repuesteros</option>
+    </select>
+  </div>
+
+  <div class="table-container">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Siniestro</th>
+            <th>Compañía</th>
+            <th>Vehículo</th>
+            <th>Patente</th>
+            <th>Repuesto</th>
+            <th>N° pieza</th>
+            <th>Posición</th>
+            <th>Calidad</th>
+            <th>Repuestero</th>
+            <th>Usado</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty" class="empty">
+      <div class="empty-icon">🔧</div>
+      <p>No hay repuestos registrados todavía.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-titulo">Nuevo repuesto</div>
+        <div class="modal-subtitle" id="modal-subtitle">Completá los datos del repuesto</div>
+      </div>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+
+    <div class="mode-selector" id="mode-selector">
+      <button class="mode-btn active" id="btn-ind" onclick="setModo('individual')">
+        <strong>Repuesto individual</strong>
+        <span>Un solo repuesto del siniestro</span>
+      </button>
+      <button class="mode-btn" id="btn-tan" onclick="setModo('tanda')">
+        <strong>Tanda de repuestos</strong>
+        <span>Varios repuestos del mismo siniestro</span>
+      </button>
+    </div>
+
+    <div class="section-label">Siniestro y seguro</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>N° de siniestro / orden *</label>
+        <input type="text" id="f-sin" placeholder="Ej: 2025-00123">
+      </div>
+      <div class="form-group">
+        <label>Compañía de seguro *</label>
+        <input type="text" id="f-seg" placeholder="Ej: Mapfre" list="dl-segs">
+        <datalist id="dl-segs"></datalist>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Repuestero que lo envió</label>
+      <input type="text" id="f-rep" placeholder="Nombre del repuestero" list="dl-reps">
+      <datalist id="dl-reps"></datalist>
+    </div>
+
+    <div class="section-label">Vehículo</div>
+    <div class="form-row3">
+      <div class="form-group">
+        <label>Marca</label>
+        <input type="text" id="f-marca" placeholder="Ej: Toyota">
+      </div>
+      <div class="form-group">
+        <label>Modelo</label>
+        <input type="text" id="f-modelo" placeholder="Ej: Corolla">
+      </div>
+      <div class="form-group">
+        <label>Año</label>
+        <input type="number" id="f-anio" placeholder="2020" min="1950" max="2030">
+      </div>
+    </div>
+    <div class="form-group" style="max-width:180px">
+      <label>Patente *</label>
+      <input type="text" id="f-pat" placeholder="AB 123 CD" style="text-transform:uppercase">
+    </div>
+
+    <!-- PANEL INDIVIDUAL -->
+    <div id="panel-ind">
+      <div class="section-label">Repuesto</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del repuesto *</label>
+          <input type="text" id="f-nombre" placeholder="Ej: Paragolpe delantero">
+        </div>
+        <div class="form-group">
+          <label>N° de pieza</label>
+          <input type="text" id="f-pieza" placeholder="Ej: 52119-42080">
+        </div>
+      </div>
+      <div class="form-row3">
+        <div class="form-group">
+          <label>Posición</label>
+          <select id="f-pos">
+            <option value="">— No aplica —</option>
+            <option>Delantero</option>
+            <option>Trasero</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lado</label>
+          <select id="f-lado">
+            <option value="">— No aplica —</option>
+            <option>Izquierdo</option>
+            <option>Derecho</option>
+            <option>Central</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Calidad</label>
+          <select id="f-cal">
+            <option value="">— No especificado —</option>
+            <option>Original</option>
+            <option>OEM</option>
+            <option>Aftermarket</option>
+            <option>Genérico</option>
+          </select>
+        </div>
+      </div>
+      <div class="toggle-group">
+        <label for="f-usado">Repuesto usado</label>
+        <label class="toggle"><input type="checkbox" id="f-usado"><span class="toggle-track"></span></label>
+      </div>
+    </div>
+
+    <!-- PANEL TANDA -->
+    <div id="panel-tan" style="display:none">
+      <div class="section-label">Repuestos de la tanda</div>
+      <div class="tanda-header">
+        <span></span><span>Repuesto</span><span>N° pieza</span><span>Posición</span><span>Lado</span><span>Calidad</span><span></span>
+      </div>
+      <div class="tanda-list" id="tanda-list"></div>
+      <div class="toggle-group" style="margin-top:10px">
+        <label for="f-usado-t">Todos los repuestos son usados</label>
+        <label class="toggle"><input type="checkbox" id="f-usado-t"><span class="toggle-track"></span></label>
+      </div>
+    </div>
+
+    <div class="section-label">Estado y fecha</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Estado *</label>
+        <select id="f-est">
+          <option value="Sin instalar">Sin instalar</option>
+          <option value="Instalado">Instalado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="f-fecha">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Observaciones</label>
+      <textarea id="f-obs" rows="2" placeholder="Notas adicionales..."></textarea>
+    </div>
+
+    <div id="form-err" class="form-err"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" id="btn-save" onclick="guardar()">Guardar repuesto</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+
+// ── USUARIOS ──────────────────────────────────────────────────
+const USUARIOS = {
+  'MattheoPzz': { pass: 'AutosPaint2025@', rol: 'admin',  nombre: 'Administrador' },
+  'LeopoldoBlz': { pass: 'AP2026@',         rol: 'viewer', nombre: 'Visualizador'  },
+};
+
+let rolActual = null;
+
+function doLogin() {
+  const user = document.getElementById('l-user').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const err  = document.getElementById('login-err');
+  const u = USUARIOS[user];
+  if (!u || u.pass !== pass) {
+    err.style.display = 'block';
+    document.getElementById('l-pass').value = '';
+    return;
+  }
+  err.style.display = 'none';
+  rolActual = u.rol;
+  sessionStorage.setItem('taller_user', JSON.stringify({ user, rol: u.rol, nombre: u.nombre }));
+  mostrarApp(u);
+}
+window.doLogin = doLogin;
+
+// Permitir Enter en los campos
+document.addEventListener('DOMContentLoaded', function() {
+  ['l-user','l-pass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+  });
+});
+
+function mostrarApp(u) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = '';
+  document.getElementById('user-badge-name').textContent = u.nombre;
+  // Si es viewer, ocultar botones de acción
+  if (u.rol === 'viewer') {
+    document.querySelectorAll('.btn-primary, .btn-secondary, .act-btn, .btn-estado').forEach(el => {
+      el.style.display = 'none';
+    });
+    // Ocultar header-btns completo para viewer
+    const hb = document.querySelector('.header-btns');
+    if (hb) hb.style.display = 'none';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('taller_user');
+  location.reload();
+}
+window.doLogout = doLogout;
+
+// Verificar sesión activa
+(function checkSession() {
+  try {
+    const saved = sessionStorage.getItem('taller_user');
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (USUARIOS[u.user] && USUARIOS[u.user].rol === u.rol) {
+        rolActual = u.rol;
+        mostrarApp({ ...USUARIOS[u.user], user: u.user });
+      }
+    }
+  } catch(e) {}
+})();
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, onSnapshot, addDoc, setDoc, deleteDoc, doc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCrEJ-HxwQXlqv1XDsLEivEDzDaG0DQ_vk",
+  authDomain: "control-de-stock-bcd4b.firebaseapp.com",
+  projectId: "control-de-stock-bcd4b",
+  storageBucket: "control-de-stock-bcd4b.firebasestorage.app",
+  messagingSenderId: "747057237303",
+  appId: "1:747057237303:web:beab0ab5703d890277deb2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const colRef = collection(db, 'repuestos');
+
+let repuestos = [];
+let editId = null;
+let modo = 'individual';
+
+// ── Indicador de conexión ─────────────────────────────────────
+function setStatus(ok) {
+  const el = document.getElementById('conn-status');
+  if (!el) return;
+  el.textContent = ok ? '● Conectado' : '● Sin conexión';
+  el.style.color = ok ? 'var(--inst-text)' : 'var(--falt-text)';
+}
+
+// ── Escuchar cambios en tiempo real desde Firestore ───────────
+onSnapshot(colRef, (snap) => {
+  repuestos = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  setStatus(true);
+  render();
+  actualizarStats();
+  actualizarFiltros();
+}, (err) => {
+  setStatus(false);
+  console.error(err);
+});
+
+// ── Guardar en Firestore ──────────────────────────────────────
+async function saveRepuesto(r) {
+  const { id, ...data } = r;
+  data.updatedAt = serverTimestamp();
+  if (editId) {
+    await setDoc(doc(db, 'repuestos', editId), data);
+  } else {
+    data.createdAt = serverTimestamp();
+    await addDoc(colRef, data);
+  }
+}
+
+async function saveMultiple(arr) {
+  for (const r of arr) {
+    const { id, ...data } = r;
+    data.createdAt = serverTimestamp();
+    data.updatedAt = serverTimestamp();
+    await addDoc(colRef, data);
+  }
+}
+
+async function updateField(id, fields) {
+  await setDoc(doc(db, 'repuestos', id), fields, { merge: true });
+}
+
+async function deleteRepuesto(id) {
+  await deleteDoc(doc(db, 'repuestos', id));
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+const calClass = { Original:'b-orig', OEM:'b-oem', Aftermarket:'b-after', 'Genérico':'b-gen' };
+function posLabel(r) { return [r.posicion, r.lado].filter(Boolean).join(' ') || '—'; }
+
+function btnEst(r) {
+  const inst = r.estado === 'Instalado';
+  return `<button class="btn-estado ${inst?'inst':'sin'}" onclick="toggleEst('${r.id}')">
+    <span class="btn-estado-dot"></span>${r.estado}
+  </button>`;
+}
+
+// ── Render tabla ──────────────────────────────────────────────
+function render() {
+  const busq = (document.getElementById('buscar').value || '').toLowerCase();
+  const eF   = document.getElementById('f-estado').value;
+  const sF   = document.getElementById('f-seguro').value;
+  const rF   = document.getElementById('f-repuestero').value;
+
+  const rows = repuestos.filter(r => {
+    const txt = [r.siniestro, r.patente, r.repuesto, r.seguro,
+                 r.marca||'', r.modelo||'', r.pieza||'', r.repuestero||'']
+                .join(' ').toLowerCase();
+    return (
+      (!busq || txt.includes(busq)) &&
+      (!eF   || r.estado     === eF) &&
+      (!sF   || r.seguro     === sF) &&
+      (!rF   || r.repuestero === rF)
+    );
+  });
+
+  // Ordenar por fecha de creación descendente
+  rows.sort((a, b) => {
+    const ta = a.createdAt?.seconds || 0;
+    const tb2 = b.createdAt?.seconds || 0;
+    return tb2 - ta;
+  });
+
+  const tb = document.getElementById('tbody');
+  const em = document.getElementById('empty');
+  if (!rows.length) { tb.innerHTML = ''; em.style.display = 'block'; return; }
+  em.style.display = 'none';
+
+  const fmt = f => f ? f.split('-').reverse().join('/') : '—';
+
+  tb.innerHTML = rows.map(r => {
+    const veh  = [r.marca, r.modelo, r.anio].filter(Boolean).join(' ') || '—';
+    const tTag = r.tandaId ? `<span class="tanda-tag" title="Tanda">T</span>` : '';
+    const calB = r.calidad ? `<span class="badge ${calClass[r.calidad]||'b-gen'}">${r.calidad}</span>` : '—';
+    return `<tr>
+      <td class="primary">${esc(r.siniestro)}${tTag}</td>
+      <td><span class="cell-seg" title="${esc(r.seguro)}">${esc(r.seguro)}</span></td>
+      <td title="${esc(veh)}">${esc(veh)}</td>
+      <td><span class="cell-pat">${esc((r.patente||'—').toUpperCase())}</span></td>
+      <td class="primary" title="${esc(r.repuesto)}">${esc(r.repuesto)}</td>
+      <td class="mono">${esc(r.pieza||'—')}</td>
+      <td>${esc(posLabel(r))}</td>
+      <td>${calB}</td>
+      <td title="${esc(r.repuestero||'—')}">${esc(r.repuestero||'—')}</td>
+      <td><span class="badge ${r.usado?'b-usado':'b-nuevo'}">${r.usado?'Usado':'Nuevo'}</span></td>
+      <td>${btnEst(r)}</td>
+      <td>${fmt(r.fecha)}</td>
+      <td>${rolActual === 'viewer' ? '' : `<div class="act-btns">
+        <button class="act-btn" title="Editar" onclick="window._editar('${r.id}')">✎</button>
+        <button class="act-btn del" title="Eliminar" onclick="window._eliminar('${r.id}')">✕</button>
+      </div>`}</td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+window.toggleEst = async function(id) {
+  const r = repuestos.find(x => x.id === id);
+  if (!r) return;
+  const nuevo = r.estado === 'Instalado' ? 'Sin instalar' : 'Instalado';
+  await updateField(id, { estado: nuevo });
+};
+
+// ── Stats ─────────────────────────────────────────────────────
+function actualizarStats() {
+  const tot  = repuestos.length;
+  const pend = repuestos.filter(r => r.estado === 'Sin instalar').length;
+  const inst = repuestos.filter(r => r.estado === 'Instalado').length;
+  const reps = new Set(repuestos.map(r => r.repuestero).filter(Boolean)).size;
+  document.getElementById('s-total').textContent       = tot;
+  document.getElementById('s-pend').textContent        = pend;
+  document.getElementById('s-inst').textContent        = inst;
+  document.getElementById('s-repuesteros').textContent = reps;
+  const pct = v => tot ? Math.round(v / tot * 100) + '%' : '0%';
+  document.getElementById('bar-pend').style.width = pct(pend);
+  document.getElementById('bar-inst').style.width = pct(inst);
+}
+
+// ── Filtros ───────────────────────────────────────────────────
+function actualizarFiltros() {
+  const sS = document.getElementById('f-seguro');
+  const sR = document.getElementById('f-repuestero');
+  const segs = [...new Set(repuestos.map(r => r.seguro).filter(Boolean))].sort();
+  const reps = [...new Set(repuestos.map(r => r.repuestero).filter(Boolean))].sort();
+  const cS = sS.value, cR = sR.value;
+  sS.innerHTML = '<option value="">Todas las compañías</option>' + segs.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  sR.innerHTML = '<option value="">Todos los repuesteros</option>' + reps.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  sS.value = cS; sR.value = cR;
+  document.getElementById('dl-segs').innerHTML = segs.map(s => `<option value="${esc(s)}">`).join('');
+  document.getElementById('dl-reps').innerHTML = reps.map(s => `<option value="${esc(s)}">`).join('');
+}
+
+// ── Modo del modal ────────────────────────────────────────────
+function setModo(m, skipInit) {
+  modo = m;
+  document.getElementById('btn-ind').classList.toggle('active', m === 'individual');
+  document.getElementById('btn-tan').classList.toggle('active', m === 'tanda');
+  document.getElementById('panel-ind').style.display = m === 'individual' ? '' : 'none';
+  document.getElementById('panel-tan').style.display = m === 'tanda' ? '' : 'none';
+  document.getElementById('btn-save').textContent    = m === 'tanda' ? 'Guardar tanda' : 'Guardar repuesto';
+  document.getElementById('modal-subtitle').textContent = m === 'tanda'
+    ? 'Varios repuestos del mismo siniestro y repuestero'
+    : 'Completá los datos del repuesto';
+  if (m === 'tanda' && !skipInit && !editId) initTanda();
+}
+window.setModo = setModo;
+
+// ── TANDA ─────────────────────────────────────────────────────
+let tandaIdx = 0;
+
+function initTanda() {
+  tandaIdx = 0;
+  var list = document.getElementById('tanda-list');
+  if (!list) return;
+  list.innerHTML = '';
+  document.getElementById('f-usado-t').checked = false;
+  document.getElementById('panel-tan').style.display = '';
+  agregarFilaTanda();
+}
+
+function agregarFilaTanda(data) {
+  tandaIdx++;
+  var id = 'ti-' + tandaIdx;
+  var d = data || {};
+  var list = document.getElementById('tanda-list');
+  var div = document.createElement('div');
+  div.className = 'tanda-item';
+  div.id = id;
+
+  var html = '<span class="tanda-num">' + tandaIdx + '</span>';
+  html += '<input type="text" class="ti-n" placeholder="Nombre del repuesto" value="' + (d.repuesto||'') + '">';
+  html += '<input type="text" class="ti-p" placeholder="N° pieza" value="' + (d.pieza||'') + '">';
+  html += '<select class="ti-pos"><option value="">Pos.</option>';
+  html += '<option' + (d.posicion==='Delantero'?' selected':'') + '>Delantero</option>';
+  html += '<option' + (d.posicion==='Trasero'?' selected':'') + '>Trasero</option></select>';
+  html += '<select class="ti-l"><option value="">Lado</option>';
+  html += '<option' + (d.lado==='Izquierdo'?' selected':'') + '>Izquierdo</option>';
+  html += '<option' + (d.lado==='Derecho'?' selected':'') + '>Derecho</option>';
+  html += '<option' + (d.lado==='Central'?' selected':'') + '>Central</option></select>';
+  html += '<select class="ti-c"><option value="">Cal.</option>';
+  html += '<option' + (d.calidad==='Original'?' selected':'') + '>Original</option>';
+  html += '<option' + (d.calidad==='OEM'?' selected':'') + '>OEM</option>';
+  html += '<option' + (d.calidad==='Aftermarket'?' selected':'') + '>Aftermarket</option>';
+  html += '<option' + (d.calidad==='Genérico'?' selected':'') + '>Genérico</option></select>';
+  html += '<button class="tanda-remove" title="Quitar">✕</button>';
+  div.innerHTML = html;
+
+  div.querySelector('.ti-n').addEventListener('input', function() { onTandaInput(id); });
+  div.querySelector('.tanda-remove').addEventListener('click', function() { quitarFilaTanda(id); });
+
+  list.appendChild(div);
+  return div;
+}
+
+function onTandaInput(id) {
+  const list = document.getElementById('tanda-list');
+  const items = list.querySelectorAll('.tanda-item');
+  const lastItem = items[items.length - 1];
+  if (lastItem && lastItem.id === id) {
+    const val = lastItem.querySelector('.ti-n').value.trim();
+    if (val) agregarFilaTanda();
+  }
+  renumerarTanda();
+}
+
+function quitarFilaTanda(id) {
+  const list = document.getElementById('tanda-list');
+  if (list.querySelectorAll('.tanda-item').length <= 1) return;
+  document.getElementById(id)?.remove();
+  renumerarTanda();
+}
+
+function renumerarTanda() {
+  document.querySelectorAll('#tanda-list .tanda-num').forEach((el, i) => el.textContent = i + 1);
+}
+
+// ── Abrir / cerrar modal ──────────────────────────────────────
+function resetForm() {
+  ['f-sin','f-seg','f-rep','f-marca','f-modelo','f-anio','f-pat','f-nombre','f-pieza','f-obs']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-pos','f-lado','f-cal'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('f-usado').checked = false;
+  document.getElementById('f-est').value = 'Sin instalar';
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+}
+
+window.abrirModal = function(m, id) {
+  m = m || 'individual';
+  id = id || null;
+  editId = id;
+  document.getElementById('form-err').style.display = 'none';
+  document.getElementById('mode-selector').style.display = id ? 'none' : '';
+
+  if (id) {
+    const r = repuestos.find(x => x.id === id);
+    document.getElementById('modal-titulo').textContent = 'Editar repuesto';
+    setModo('individual', true);
+    document.getElementById('f-sin').value    = r.siniestro;
+    document.getElementById('f-seg').value    = r.seguro;
+    document.getElementById('f-rep').value    = r.repuestero || '';
+    document.getElementById('f-marca').value  = r.marca  || '';
+    document.getElementById('f-modelo').value = r.modelo || '';
+    document.getElementById('f-anio').value   = r.anio   || '';
+    document.getElementById('f-pat').value    = r.patente;
+    document.getElementById('f-nombre').value = r.repuesto;
+    document.getElementById('f-pieza').value  = r.pieza  || '';
+    document.getElementById('f-pos').value    = r.posicion || '';
+    document.getElementById('f-lado').value   = r.lado   || '';
+    document.getElementById('f-cal').value    = r.calidad || '';
+    document.getElementById('f-usado').checked = !!r.usado;
+    document.getElementById('f-est').value    = r.estado;
+    document.getElementById('f-fecha').value  = r.fecha  || '';
+    document.getElementById('f-obs').value    = r.obs    || '';
+    document.getElementById('modal-overlay').classList.add('open');
+  } else {
+    document.getElementById('modal-titulo').textContent = m === 'tanda' ? 'Cargar tanda de repuestos' : 'Nuevo repuesto';
+    resetForm();
+    document.getElementById('modal-overlay').classList.add('open');
+    requestAnimationFrame(function() { setModo(m); });
+  }
+};
+
+window.cerrarModal = function() { document.getElementById('modal-overlay').classList.remove('open'); };
+window.cerrarOverlay = function(e) { if (e.target === document.getElementById('modal-overlay')) window.cerrarModal(); };
+
+// ── Guardar ───────────────────────────────────────────────────
+window.guardar = async function() {
+  const err = document.getElementById('form-err');
+  const sin = document.getElementById('f-sin').value.trim();
+  const seg = document.getElementById('f-seg').value.trim();
+  const pat = document.getElementById('f-pat').value.trim();
+  if (!sin || !seg || !pat) {
+    err.textContent = 'Siniestro, compañía y patente son obligatorios.';
+    err.style.display = 'block'; return;
+  }
+  err.style.display = 'none';
+
+  const btn = document.getElementById('btn-save');
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
+  const base = {
+    siniestro : sin, seguro: seg,
+    repuestero: document.getElementById('f-rep').value.trim(),
+    marca     : document.getElementById('f-marca').value.trim(),
+    modelo    : document.getElementById('f-modelo').value.trim(),
+    anio      : document.getElementById('f-anio').value.trim(),
+    patente   : pat.toUpperCase(),
+    estado    : document.getElementById('f-est').value,
+    fecha     : document.getElementById('f-fecha').value,
+    obs       : document.getElementById('f-obs').value.trim(),
+  };
+
+  try {
+    if (modo === 'tanda' && !editId) {
+      const items   = document.querySelectorAll('#tanda-list .tanda-item');
+      const usadoT  = document.getElementById('f-usado-t').checked;
+      const tandaId = 'T' + Date.now();
+      const nuevos  = [];
+      items.forEach(item => {
+        const n = item.querySelector('.ti-n').value.trim();
+        if (!n) return;
+        nuevos.push({
+          ...base,
+          repuesto : n,
+          pieza    : item.querySelector('.ti-p').value.trim(),
+          posicion : item.querySelector('.ti-pos').value,
+          lado     : item.querySelector('.ti-l').value,
+          calidad  : item.querySelector('.ti-c').value,
+          usado    : usadoT,
+          tandaId,
+        });
+      });
+      if (!nuevos.length) {
+        err.textContent = 'Agregá al menos un repuesto a la tanda.';
+        err.style.display = 'block';
+        btn.textContent = 'Guardar tanda'; btn.disabled = false; return;
+      }
+      await saveMultiple(nuevos);
+    } else {
+      const nombre = document.getElementById('f-nombre').value.trim();
+      if (!nombre) {
+        err.textContent = 'El nombre del repuesto es obligatorio.';
+        err.style.display = 'block';
+        btn.textContent = 'Guardar repuesto'; btn.disabled = false; return;
+      }
+      const r = {
+        ...base,
+        repuesto : nombre,
+        pieza    : document.getElementById('f-pieza').value.trim(),
+        posicion : document.getElementById('f-pos').value,
+        lado     : document.getElementById('f-lado').value,
+        calidad  : document.getElementById('f-cal').value,
+        usado    : document.getElementById('f-usado').checked,
+      };
+      await saveRepuesto(r);
+    }
+    window.cerrarModal();
+  } catch(e) {
+    err.textContent = 'Error al guardar. Verificá tu conexión.';
+    err.style.display = 'block';
+  } finally {
+    btn.textContent = modo === 'tanda' ? 'Guardar tanda' : 'Guardar repuesto';
+    btn.disabled = false;
+  }
+};
+
+window._eliminar = async function(id) {
+  const r = repuestos.find(x => x.id === id);
+  if (!confirm(`¿Eliminar "${r.repuesto}" del siniestro ${r.siniestro}?`)) return;
+  await deleteRepuesto(id);
+};
+
+window._editar = function(id) { window.abrirModal('individual', id); };
+
+</script>
+</body>
+</html>

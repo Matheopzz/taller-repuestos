@@ -410,7 +410,7 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
         </div>
         <div class="form-group">
           <label>N° de pieza</label>
-          <input type="text" id="f-pieza" placeholder="Ej: 52119-42080">
+          <input type="text" id="f-pieza" placeholder="Ej: 52119-42080" style="text-transform:uppercase">
         </div>
       </div>
       <div class="form-row3">
@@ -776,7 +776,7 @@ function agregarFilaTanda(data) {
 
   var html = '<span class="tanda-num">' + tandaIdx + '</span>';
   html += '<input type="text" class="ti-n" placeholder="Nombre del repuesto" value="' + (d.repuesto||'') + '">';
-  html += '<input type="text" class="ti-p" placeholder="N° pieza" value="' + (d.pieza||'') + '">';
+  html += '<input type="text" class="ti-p" placeholder="N° pieza" value="' + (d.pieza||'') + '" style="text-transform:uppercase">';
   html += '<select class="ti-pos"><option value="">Pos.</option>';
   html += '<option' + (d.posicion==='Delantero'?' selected':'') + '>Delantero</option>';
   html += '<option' + (d.posicion==='Trasero'?' selected':'') + '>Trasero</option></select>';
@@ -910,7 +910,7 @@ window.guardar = async function() {
         nuevos.push({
           ...base,
           repuesto : n,
-          pieza    : item.querySelector('.ti-p').value.trim(),
+          pieza    : item.querySelector('.ti-p').value.trim().toUpperCase(),
           posicion : item.querySelector('.ti-pos').value,
           lado     : item.querySelector('.ti-l').value,
           calidad  : item.querySelector('.ti-c').value,
@@ -934,7 +934,7 @@ window.guardar = async function() {
       const r = {
         ...base,
         repuesto : nombre,
-        pieza    : document.getElementById('f-pieza').value.trim(),
+        pieza    : document.getElementById('f-pieza').value.trim().toUpperCase(),
         posicion : document.getElementById('f-pos').value,
         lado     : document.getElementById('f-lado').value,
         calidad  : document.getElementById('f-cal').value,

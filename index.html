@@ -294,17 +294,17 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
   <div class="toolbar">
     <div class="search-wrap">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="buscar" placeholder="Buscar siniestro, patente, repuesto, repuestero..." oninput="render()">
+      <input type="text" id="buscar" placeholder="Buscar siniestro, patente, repuesto, repuestero..." id="input-buscar-fix">
     </div>
-    <select id="f-estado" onchange="render()" style="width:155px">
+    <select id="f-estado" style="width:155px">
       <option value="">Todos los estados</option>
       <option value="Sin instalar">Sin instalar</option>
       <option value="Instalado">Instalado</option>
     </select>
-    <select id="f-seguro" onchange="render()" style="width:175px">
+    <select id="f-seguro" style="width:175px">
       <option value="">Todas las compañías</option>
     </select>
-    <select id="f-repuestero" onchange="render()" style="width:170px">
+    <select id="f-repuestero" style="width:170px">
       <option value="">Todos los repuesteros</option>
     </select>
   </div>
@@ -341,7 +341,7 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
 </div>
 
 <!-- MODAL -->
-<div class="modal-overlay" id="modal-overlay" onclick="cerrarOverlay(event)">
+<div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-header">
       <div>
@@ -639,6 +639,7 @@ function btnEst(r) {
 }
 
 // ── Render tabla ──────────────────────────────────────────────
+window.render = render;
 function render() {
   const busq = (document.getElementById('buscar').value || '').toLowerCase();
   const eF   = document.getElementById('f-estado').value;
@@ -958,6 +959,29 @@ window._eliminar = async function(id) {
 };
 
 window._editar = function(id) { window.abrirModal('individual', id); };
+
+// ── Conectar filtros y búsqueda al DOM ────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  var buscar = document.getElementById('buscar');
+  var fEst   = document.getElementById('f-estado');
+  var fSeg   = document.getElementById('f-seguro');
+  var fRep   = document.getElementById('f-repuestero');
+  if (buscar) buscar.addEventListener('input',  function() { render(); });
+  if (fEst)   fEst.addEventListener('change',   function() { render(); });
+  if (fSeg)   fSeg.addEventListener('change',   function() { render(); });
+  if (fRep)   fRep.addEventListener('change',   function() { render(); });
+
+  // modal overlay click
+  var overlay = document.getElementById('modal-overlay');
+  if (overlay) overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) window.cerrarModal();
+  });
+  // login enter
+  ['l-user','l-pass'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') window.doLogin(); });
+  });
+});
 
 </script>
 </body>

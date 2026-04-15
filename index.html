@@ -365,11 +365,11 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
     <div class="section-label">Siniestro y seguro</div>
     <div class="form-row">
       <div class="form-group">
-        <label>N° de siniestro / orden *</label>
+        <label>N° de siniestro / orden</label>
         <input type="text" id="f-sin" placeholder="Ej: 2025-00123">
       </div>
       <div class="form-group">
-        <label>Compañía de seguro *</label>
+        <label>Compañía de seguro</label>
         <input type="text" id="f-seg" placeholder="Ej: Mapfre" list="dl-segs">
         <datalist id="dl-segs"></datalist>
       </div>
@@ -396,7 +396,7 @@ textarea{height:auto;padding:10px 12px;resize:vertical;line-height:1.5}
       </div>
     </div>
     <div class="form-group" style="max-width:180px">
-      <label>Patente *</label>
+      <label>Patente</label>
       <input type="text" id="f-pat" placeholder="AB 123 CD" style="text-transform:uppercase">
     </div>
 
@@ -876,10 +876,7 @@ window.guardar = async function() {
   const sin = document.getElementById('f-sin').value.trim();
   const seg = document.getElementById('f-seg').value.trim();
   const pat = document.getElementById('f-pat').value.trim();
-  if (!sin || !seg || !pat) {
-    err.textContent = 'Siniestro, compañía y patente son obligatorios.';
-    err.style.display = 'block'; return;
-  }
+  // ningún campo es obligatorio ahora
   err.style.display = 'none';
 
   const btn = document.getElementById('btn-save');
